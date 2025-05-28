@@ -1,0 +1,20 @@
+apiVersion: config.projectsveltos.io/v1beta1
+kind: ClusterProfile
+metadata:
+  name: nginx-ingress-controller
+spec:
+  clusterSelector:
+    matchLabels:
+      deploy-nginx-ingress-controller: default
+  helmCharts:
+    - repositoryURL: https://kubernetes.github.io/ingress-nginx
+      repositoryName: ingress-nginx
+      chartName: ingress-nginx/ingress-nginx
+      chartVersion: 4.12.2
+      releaseName: nginx-ingress-controller
+      releaseNamespace: ingress-nginx
+      helmChartAction: Install
+      values: |
+        global:
+        commonLabels:
+          cluster: "{{ .Cluster.metadata.name }}"
