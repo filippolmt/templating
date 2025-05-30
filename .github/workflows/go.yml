@@ -1,19 +1,17 @@
-name: Build Go Binaries
+name: Release Go Binaries
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
+    tags:
+      - '*'
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         goos: [darwin, linux]
-        goarch: [amd64, arm64]
+        goarch: [arm64, amd64]
         exclude:
           - goos: darwin
             goarch: amd64
@@ -30,8 +28,23 @@ jobs:
           cd src
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -o ../render-${{ matrix.goos }}-${{ matrix.goarch }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: render-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: render-${{ matrix.goos }}-${{ matrix.goarch }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./render-${{ matrix.goos }}-${{ matrix.goarch }}
+          asset_name: render-${{ matrix.goos }}-${{ matrix.goarch }}
+          asset_content_type: application/octet-stream
