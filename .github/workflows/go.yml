@@ -1,0 +1,37 @@
+name: Build Go Binaries
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [darwin, linux]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: darwin
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+        run: |
+          cd src
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -o ../render-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: render-${{ matrix.goos }}-${{ matrix.goarch }}
